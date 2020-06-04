@@ -80,15 +80,13 @@
                                             {{-- bookのブレスの場合 --}}
                                             @if (isset($post->book))
                                                 <span style="font-size:12px; color:#999;">
-                                                    <a href="{{ route('books.show', [
-                                                    'book_id' => $post->book->id,
-                                                    ]) }}">{{ $post->book->book_title }}</a>のブレス
+                                                    <a href="{{ route('books.show', $post->book) }}">{{ $post->book->book_title }}</a>のブレス
                                                 </span>
                                             @endif
                                             {{-- 返信先がある場合 --}}
                                             @if (isset($post->post_parent))
                                                 <br><span style="font-size:12px; color:#999;">返信先：
-                                                    <a href="{{ route('users.show', $post->post_parent->user->id) }}">{{ $post->post_parent->user->name }}</a>
+                                                    <a href="{{ route('users.show', $post->post_parent->user) }}">{{ $post->post_parent->user->name }}</a>
                                                 </span>
                                             @endif
                                         </div>
@@ -115,15 +113,13 @@
                                                         {{-- bookのブレスの場合 --}}
                                                         @if (isset($post->post_reference->book))
                                                             <span style="font-size:12px; color:#999;">
-                                                                <a href="{{ route('books.show', [
-                                                                'book_id' => $post->post_reference->book->id,
-                                                                ]) }}">{{ $post->post_reference->book->book_title }}</a>のブレス
+                                                                <a href="{{ route('books.show', $post->post_reference->book) }}">{{ $post->post_reference->book->book_title }}</a>のブレス
                                                             </span>
                                                         @endif
                                                         {{-- 返信先がある場合 --}}
                                                         @if (isset($post->post_reference->post_parent))
                                                             <br><span style="font-size:12px; color:#999;">返信先：
-                                                                <a href="{{ route('users.show', $post->post_reference->post_parent->user->id) }}">{{ $post->post_reference->post_parent->user->name }}</a>
+                                                                <a href="{{ route('users.show', $post->post_reference->post_parent->user) }}">{{ $post->post_reference->post_parent->user->name }}</a>
                                                             </span>
                                                         @endif
                                                     </div>

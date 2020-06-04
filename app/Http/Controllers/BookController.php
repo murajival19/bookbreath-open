@@ -5,13 +5,9 @@ namespace App\Http\Controllers;
 use App\Book;
 use App\Post;
 use App\Booklike;
-use Validator;
-
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\Validator;
 
 class BookController extends Controller
 {
@@ -80,7 +76,7 @@ class BookController extends Controller
             $book->defaultLiked = true;
         }
 
-        return view('books.create',[
+        return view('books.create', [
             'book' => $book,
         ]);
     }
@@ -105,9 +101,9 @@ class BookController extends Controller
     public function show(Book $book)
     {
         $posts = Post::where('book_id', $book->id)
-        ->where('reply_id', null)
-        ->orderBy('created_at', 'desc')
-        ->paginate(5);
+            ->where('reply_id', null)
+            ->orderBy('created_at', 'desc')
+            ->paginate(5);
 
         $posts->load(
             'image',
@@ -183,33 +179,33 @@ class BookController extends Controller
     }
 
 
-    public function search(Request $request) {
+    public function search(Request $request)
+    {
 
         if ($request->search != "") {
 
             // スペースでアンド検索
-            $search_temp = str_replace([" ","　"], '|', $request->search);
+            $search_temp = str_replace([" ", "　"], '|', $request->search);
 
             if (strpos($search_temp, "|")) {
                 $search_array = explode("|", $search_temp);
 
-                $books = Book::where(function ($query) use ($search_array){
+                $books = Book::where(function ($query) use ($search_array) {
                     foreach ($search_array as $search) {
                         $query->where('book_title', 'like', "%{$search}%");
                     }
                 })
-                ->orWhere(function ($query) use ($search_array){
-                    foreach ($search_array as $search) {
-                        $query->where('author', 'like', "%{$search}%");
-                    }
-                })
-                ->orWhere(function ($query) use ($search_array){
-                    foreach ($search_array as $search) {
-                        $query->where('book_description', 'like', "%{$search}%");
-                    }
-                })
-                ->paginate(5);
-
+                    ->orWhere(function ($query) use ($search_array) {
+                        foreach ($search_array as $search) {
+                            $query->where('author', 'like', "%{$search}%");
+                        }
+                    })
+                    ->orWhere(function ($query) use ($search_array) {
+                        foreach ($search_array as $search) {
+                            $query->where('book_description', 'like', "%{$search}%");
+                        }
+                    })
+                    ->paginate(5);
             } else {
 
                 $books = Book::where('book_title', 'like', "%{$request->search}%")
@@ -231,7 +227,7 @@ class BookController extends Controller
                 }
             }
 
-            return view('books.search',[
+            return view('books.search', [
                 'books' => $books,
                 'search_query' => $request->search,
                 'search_count' => $books->total(),
@@ -239,41 +235,39 @@ class BookController extends Controller
         } else {
 
             return redirect('/');
-
         }
-
     }
 
     public function externalSearch(Request $request)
     {
-        if (!empty($request->title) || !empty($request->author) || !empty($request->isbn) || !empty($request->all)){
+        if (!empty($request->title) || !empty($request->author) || !empty($request->isbn) || !empty($request->all)) {
 
             // スペースでアンド検索
             // クエリの作成
             $request_array = $request->all();
             $query = '';
             if (!empty($request_array['all'])) {
-                $request_array['all'] = str_replace([" ","　"], '+', $request_array['all']);
+                $request_array['all'] = str_replace([" ", "　"], '+', $request_array['all']);
                 $query = $query . $request_array['all'] . '+';
             }
             if (!empty($request_array['title'])) {
-                $request_array['title'] = str_replace([" ","　"], '+', $request_array['title']);
+                $request_array['title'] = str_replace([" ", "　"], '+', $request_array['title']);
                 $query = $query . 'intitle:' . $request_array['title'] . '+';
             }
             if (!empty($request_array['author'])) {
-                $request_array['author'] = str_replace([" ","　"], '+', $request_array['author']);
+                $request_array['author'] = str_replace([" ", "　"], '+', $request_array['author']);
                 $query = $query . 'inauthor:' . $request_array['author'] . '+';
             }
             if (!empty($request_array['isbn'])) {
-                $request_array['isbn'] = str_replace([" ","　"], '+', $request_array['isbn']);
+                $request_array['isbn'] = str_replace([" ", "　"], '+', $request_array['isbn']);
                 $query = $query . 'isbn:' . $request_array['isbn'] . '+';
             }
-            $query = substr_replace($query, '', strlen($query)-1);
+            $query = substr_replace($query, '', strlen($query) - 1);
             $country = 'JP';
             $maxResults = 40; // max:40
 
             $param = '?q=' . $query . '&Country=' . $country . '&maxResults=' . $maxResults;
-            $url = "https://www.googleapis.com/books/v1/volumes". $param;
+            $url = "https://www.googleapis.com/books/v1/volumes" . $param;
 
             $request->search = str_replace("+", ' ', $request->search);
 
@@ -306,19 +300,18 @@ class BookController extends Controller
 
             if ($json_decode->totalItems == 0) {
 
-                return view('books.externalSearch',[
+                return view('books.externalSearch', [
                     'search_title' => $request->title,
                     'search_author' => $request->author,
                     'search_isbn' => $request->isbn,
                     'search_all' => $request->all,
                     'search_count' => $json_decode->totalItems,
                 ]);
-
             } else {
 
                 $books = $json_decode->items;
 
-                return view('books.externalSearch',[
+                return view('books.externalSearch', [
                     'books' => $books,
                     'search_title' => $request->title,
                     'search_author' => $request->author,
@@ -327,7 +320,6 @@ class BookController extends Controller
                     'search_count' => $json_decode->totalItems,
                 ]);
             }
-
         } else {
 
             return redirect('/');
@@ -336,12 +328,12 @@ class BookController extends Controller
 
     public function library(Book $book)
     {
-        $books = Book::whereHas('booklike', function($query) {
+        $books = Book::whereHas('booklike', function ($query) {
             $query->where('user_id', Auth::id());
         })
-        ->with('booklike')
-        ->orderBy('created_at', 'desc')
-        ->paginate(20);
+            ->with('booklike')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
 
         // likeカウントとlikedの判定（book,複数）
         foreach ($books as $book) {
@@ -358,48 +350,48 @@ class BookController extends Controller
         return view('books.library', ['books' => $books]);
     }
 
-    public function librarySearch(Request $request) {
+    public function librarySearch(Request $request)
+    {
 
         if ($request->search != "") {
 
             // スペースでアンド検索
-            $search_temp = str_replace([" ","　"], '|', $request->search);
+            $search_temp = str_replace([" ", "　"], '|', $request->search);
 
             if (strpos($search_temp, "|")) {
                 $search_array = explode("|", $search_temp);
 
-                $books = Book::whereHas('booklike', function($quer) {
+                $books = Book::whereHas('booklike', function ($quer) {
                     $quer->where('user_id', Auth::id());
                 })
-                ->where(function ($query) use ($search_array){
-                    foreach ($search_array as $search) {
-                        $query->where('book_title', 'like', "%{$search}%");
-                    }
-                })
-                ->orWhere(function ($query) use ($search_array){
-                    foreach ($search_array as $search) {
-                        $query->where('author', 'like', "%{$search}%");
-                    }
-                })
-                ->orWhere(function ($query) use ($search_array){
-                    foreach ($search_array as $search) {
-                        $query->where('book_description', 'like', "%{$search}%");
-                    }
-                })
-                ->paginate(5);
-
+                    ->where(function ($query) use ($search_array) {
+                        foreach ($search_array as $search) {
+                            $query->where('book_title', 'like', "%{$search}%");
+                        }
+                    })
+                    ->orWhere(function ($query) use ($search_array) {
+                        foreach ($search_array as $search) {
+                            $query->where('author', 'like', "%{$search}%");
+                        }
+                    })
+                    ->orWhere(function ($query) use ($search_array) {
+                        foreach ($search_array as $search) {
+                            $query->where('book_description', 'like', "%{$search}%");
+                        }
+                    })
+                    ->paginate(5);
             } else {
 
                 $search = $request->search;
-                $books = Book::whereHas('booklike', function($query) {
+                $books = Book::whereHas('booklike', function ($query) {
                     $query->where('user_id', Auth::id());
                 })
-                ->where(function($query) use ($search) {
-                    $query->where('book_title', 'like', "%{$search}%")
-                    ->orWhere('author', 'like', "%{$search}%")
-                    ->orWhere('book_description', 'like', "%{$search}%");
-                })
-                ->paginate(5);
+                    ->where(function ($query) use ($search) {
+                        $query->where('book_title', 'like', "%{$search}%")
+                            ->orWhere('author', 'like', "%{$search}%")
+                            ->orWhere('book_description', 'like', "%{$search}%");
+                    })
+                    ->paginate(5);
             }
 
             // likeカウントとlikedの判定（book,複数）
@@ -415,7 +407,7 @@ class BookController extends Controller
                 }
             }
 
-            return view('books.library',[
+            return view('books.library', [
                 'books' => $books,
                 'search_query' => $request->search,
                 'search_count' => $books->total(),
@@ -425,27 +417,32 @@ class BookController extends Controller
         }
     }
 
-    public function terms() {
+    public function terms()
+    {
         return view('books.terms');
     }
 
-    public function policy() {
+    public function policy()
+    {
         return view('books.policy');
     }
 
-    public function buyAmazon(Request $request) {
+    public function buyAmazon(Request $request)
+    {
 
         $url = 'https://www.amazon.co.jp/s?k=' . $request->book_title;
         return redirect()->away($url);
     }
 
-    public function buyRakuten(Request $request) {
+    public function buyRakuten(Request $request)
+    {
 
         $url = 'https://search.rakuten.co.jp/search/mall/' . $request->book_title;
         return redirect()->away($url);
     }
 
-    public function howToUse() {
+    public function howToUse()
+    {
         return view('books.howToUse');
     }
 }

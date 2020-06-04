@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Image extends Model
 {
     protected $fillable = [
-        'user_id', 'post_id', 'image_name', 'image_url'
+        'user_id',
+        'post_id',
+        'image_name',
+        'image_url',
     ];
 }

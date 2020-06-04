@@ -7,25 +7,36 @@ use Illuminate\Database\Eloquent\Model;
 class Book extends Model
 {
     protected $fillable = [
-        'book_title', 'author', 'publishedDate', 'isbn_13', 'book_description', 'book_image_url', 'category_id', 'content_count'
+        'book_title',
+        'author',
+        'publishedDate',
+        'isbn_13',
+        'book_description',
+        'book_image_url',
+        'category_id',
+        'content_count',
     ];
 
-    public function category(){
-        return $this->belongsTo(\App\Category::class);
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
     }
 
-    public function book(){
-        return $this->hasOne(\App\Book::class, 'id', 'id');
+    public function book()
+    {
+        return $this->hasOne(Book::class, 'id', 'id');
     }
 
-    public function post(){
-        return $this->hasMany(\App\Post::class, 'book_id', 'id');
+    public function post()
+    {
+        return $this->hasMany(Post::class, 'book_id', 'id');
     }
 
-    public function user(){
+    public function user()
+    {
         return $this->hasManyThrough(
-            \App\User::class,
-            \App\Post::class,
+            User::class,
+            Post::class,
             'book_id',
             'id',
             null,
@@ -33,14 +44,16 @@ class Book extends Model
         );
     }
 
-    public function image(){
+    public function image()
+    {
         return $this->hasManyThrough(
-            \App\Image::class,
-            \App\Post::class
+            Image::class,
+            Post::class
         );
     }
 
-    public function booklike(){
-        return $this->hasMany(\App\Booklike::class, 'book_id', 'id');
+    public function booklike()
+    {
+        return $this->hasMany(Booklike::class, 'book_id', 'id');
     }
 }

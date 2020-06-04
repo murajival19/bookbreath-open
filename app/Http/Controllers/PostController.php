@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Post;
 use App\Image;
 use App\Http\Requests\PostRequest;
-use DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use  Intervention\Image\ImageServiceProvider;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image as ImageOperetor;
 
 class PostController extends Controller
 {
@@ -66,19 +67,18 @@ class PostController extends Controller
             $book_id = Post::find($request->reply_id)->book_id;
             $temp += ['reply_id' => $request->reply_id];
             $temp += ['book_id' => $book_id];
-        // referrenceコメントがある時
+            // referrenceコメントがある時
         } elseif (isset($request->reference_id)) {
             $book_id = Post::find($request->reference_id)->book_id;
             $temp += ['reference_id' => $request->reference_id];
             $temp += ['book_id' => $book_id];
-        // book_idのみの時
+            // book_idのみの時
         } elseif (isset($request->book_id)) {
             $temp += ['book_id' => $request->book_id];
         } else {
-        // 何もない時
+            // 何もない時
         }
         return view('posts.create', $temp);
-
     }
 
     /**
@@ -95,10 +95,10 @@ class PostController extends Controller
             $post = $post->fill($request->all());
             $post->save();
 
-            if (isset($request->post_image)):
+            if (isset($request->post_image)) :
                 // 画像をストレージに保存
-                $image = new Image;
-                $img = \Image::make($request->file('post_image'));
+                $image = new Image();
+                $img = ImageOperetor::make($request->file('post_image'));
 
                 // ここで編集
                 $img->resize(500, null, function ($constraint) {
@@ -120,14 +120,13 @@ class PostController extends Controller
         // replyコメントがある時
         if (isset($request->reply_id)) {
             return redirect()->route('posts.show', $request->reply_id);
-        // book_idがある時
+            // book_idがある時
         } elseif (isset($request->book_id)) {
             return redirect()->route('books.show', $request->book_id);
-        // referenceコメントがある時、その他
+            // referenceコメントがある時、その他
         } else {
             return redirect()->route('posts.index');
         }
-
     }
 
     /**
@@ -168,7 +167,7 @@ class PostController extends Controller
             $post->defaultLiked = true;
         }
 
-         // likeカウントとlikedの判定（post_parent,単数）
+        // likeカウントとlikedの判定（post_parent,単数）
         if (isset($post->post_parent)) {
             $post->load('post_parent.postlike');
             $post->post_parent->defaultCount = count($post->post_parent->postlike);
@@ -245,12 +244,12 @@ class PostController extends Controller
         } else {
             DB::transaction(function () use ($request, $post) {
                 $post->fill($request->all())->save();
-                if (isset($request->image_delete)):
+                if (isset($request->image_delete)) :
                     $image_array = Image::whereIn('id', $request->image_delete)->get();
                     // ストレージの画像を削除
                     foreach ($image_array as $image) {
                         $filePath = storage_path('app/public/image/') . $image->image_name;
-                        if (\File::exists($filePath)) {
+                        if (File::exists($filePath)) {
                             unlink($filePath);
                             Storage::delete($image);
                         }
@@ -259,10 +258,10 @@ class PostController extends Controller
                     Image::whereIn('id', $request->image_delete)->delete();
                 endif;
 
-                if (isset($request->post_image)):
+                if (isset($request->post_image)) :
                     // 画像をストレージに保存
-                    $image = new Image;
-                    $img = \Image::make($request->file('post_image'));
+                    $image = new Image();
+                    $img = ImageOperetor::make($request->file('post_image'));
 
                     // ここで編集
                     $img->resize(500, null, function ($constraint) {
@@ -298,7 +297,7 @@ class PostController extends Controller
             foreach ($image_array as $image) {
                 // ストレージの画像を削除（DBは連動して自動で削除→マイグレーション時に設定）
                 $filePath = storage_path('app/public/image/') . $image->image_name;
-                if (\File::exists($filePath)) {
+                if (File::exists($filePath)) {
                     unlink($filePath);
                     Storage::delete($image);
                 }
@@ -317,7 +316,7 @@ class PostController extends Controller
             foreach ($image_array as $image) {
                 // ストレージの画像を削除（DBは連動して自動で削除→マイグレーション時に設定）
                 $filePath = storage_path('app/public/image/') . $image->image_name;
-                if (\File::exists($filePath)) {
+                if (File::exists($filePath)) {
                     unlink($filePath);
                     Storage::delete($image);
                 }
@@ -329,10 +328,11 @@ class PostController extends Controller
         return redirect('/posts');
     }
 
-    public function search(Request $request) {
+    public function search(Request $request)
+    {
         $posts = Post::where('content', 'like', "%{$request->search}%")
-        ->orderBy('created_at', 'desc')
-        ->paginate(10);
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
         $posts->load(
             'user.thumbnail_image',
             'book',
@@ -360,7 +360,7 @@ class PostController extends Controller
             }
         }
 
-        return view('posts.search',[
+        return view('posts.search', [
             'posts' => $posts,
             'search_query' => $request->search,
             'search_count' => $search_count,
@@ -369,15 +369,15 @@ class PostController extends Controller
 
     public function twitter(Post $post, Request $request)
     {
-        $url = 'url='.$request->url.'/posts/'.$post->id;
-        $text = '&text='.$post->content.' by '.$request->user_name;
-        $text = preg_replace('/(?:\n|\r|\r\n)/', '', $text );
+        $url = 'url=' . $request->url . '/posts/' . $post->id;
+        $text = '&text=' . $post->content . ' by ' . $request->user_name;
+        $text = preg_replace('/(?:\n|\r|\r\n)/', '', $text);
 
         if (isset($request->book_title)) {
-            $hashtags = '&hashtags='.$request->book_title;
-            $tweetShere ='https://twitter.com/intent/tweet?'.$url.$text.$hashtags;
+            $hashtags = '&hashtags=' . $request->book_title;
+            $tweetShere = 'https://twitter.com/intent/tweet?' . $url . $text . $hashtags;
         } else {
-            $tweetShere ='https://twitter.com/intent/tweet?'.$url.$text;
+            $tweetShere = 'https://twitter.com/intent/tweet?' . $url . $text;
         }
 
         return redirect()->away($tweetShere);
