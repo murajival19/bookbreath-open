@@ -5,15 +5,14 @@ namespace App\Http\Controllers;
 use App\User;
 use App\Image;
 use App\Post;
-use Validator;
-use DB;
-use File;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Http\Requests\UserRequest;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image as ImageOperetor;
 
 class UserController extends Controller
 {
@@ -140,7 +139,7 @@ class UserController extends Controller
             // サムネイル画像の更新
             if (isset($request->user_image)) {
                 // すでにサムネイル画像があるなら
-                if(!empty($thumbnail_id)) {
+                if (!empty($thumbnail_id)) {
 
                     // 今のサムネイル画像がnoimage以外なら
                     if ($user->thumbnail_id != 1) {
@@ -148,7 +147,7 @@ class UserController extends Controller
 
                         // ストレージの画像を削除
                         $filePath = storage_path('app/public/image/') . $image->image_name;
-                        if (\File::exists($filePath)) {
+                        if (File::exists($filePath)) {
                             unlink($filePath);
                             Storage::delete($image);
                         }
@@ -158,16 +157,16 @@ class UserController extends Controller
                     }
                 }
 
-                $img = \Image::make($request->file('user_image'));
+                $img = ImageOperetor::make($request->file('user_image'));
 
                 // ここで編集
-                $img->resize(200,200);
+                $img->resize(200, 200);
 
                 $save_path = storage_path('app/public/image/');
                 $filename = uniqid("user_image_") . '.' . $request->file('user_image')->guessExtension();
                 $img->save($save_path . $filename);
 
-                $image = new Image;
+                $image = new Image();
                 $image->image_name = $filename;
                 $image->user_id = $user->id;
                 $image->save();
@@ -180,7 +179,7 @@ class UserController extends Controller
             $user->save();
         });
 
-        return redirect('/users/'. $user->id);
+        return redirect('/users/' . $user->id);
     }
 
     /**

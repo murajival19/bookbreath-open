@@ -3,7 +3,6 @@
 namespace App;
 
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Notifications\ResetPasswordNotification;
 
@@ -17,7 +16,15 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'name_id', 'email', 'password', 'thumbnail_id', 'user_description', 'user_website', 'user_twitter', 'user_facebook'
+        'name',
+        'name_id',
+        'email',
+        'password',
+        'thumbnail_id',
+        'user_description',
+        'user_website',
+        'user_twitter',
+        'user_facebook',
     ];
 
     /**
@@ -26,7 +33,8 @@ class User extends Authenticatable
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token',
+        'password',
+        'remember_token',
     ];
 
     /**
@@ -38,18 +46,21 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function user(){
-        return $this->hasOne(\App\User::class, 'id', 'id');
+    public function user()
+    {
+        return $this->hasOne(User::class, 'id', 'id');
     }
 
-    public function post(){
-        return $this->hasMany(\App\Post::class, 'user_id', 'id');
+    public function post()
+    {
+        return $this->hasMany(Post::class, 'user_id', 'id');
     }
 
-    public function book(){
+    public function book()
+    {
         return $this->hasManyThrough(
-            \App\Book::class,
-            \App\Post::class,
+            Book::class,
+            Post::class,
             'user_id',
             'id',
             null,
@@ -57,19 +68,23 @@ class User extends Authenticatable
         );
     }
 
-    public function image() {
-        return $this->hasMany(\App\Image::class, 'user_id', 'id');
+    public function image()
+    {
+        return $this->hasMany(Image::class, 'user_id', 'id');
     }
 
-    public function thumbnail_image() {
-        return $this->belongsTo(\App\Image::class, 'thumbnail_id', 'id');
+    public function thumbnail_image()
+    {
+        return $this->belongsTo(Image::class, 'thumbnail_id', 'id');
     }
 
-    public function background_image() {
-        return $this->belongsTo(\App\Image::class, 'background_id', 'id');
+    public function background_image()
+    {
+        return $this->belongsTo(Image::class, 'background_id', 'id');
     }
 
-    public function sendPasswordResetNotification($token) {
+    public function sendPasswordResetNotification($token)
+    {
         $this->notify(new ResetPasswordNotification($token));
     }
 }

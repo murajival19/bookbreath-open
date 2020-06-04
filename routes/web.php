@@ -11,29 +11,12 @@
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
-
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Auth::routes();
 
-// Route::get('/home', 'HomeController@index')->name('home');
-
 Route::get('/', 'BookController@index')->name('books.index');
-
-// Route::get('/', function(){
-//     $image = Image::make(file_get_contents('http://goo.gl/uDTEzv'));
-//     // $image->resize(100,null, function($constraint){
-//     //     $constraint->aspectRatio();
-//     // });
-//     $image->crop(100, 100);
-//     return $image->response('jpg');
-// });
-
-
 Route::get('books/search', 'BookController@search')->name('books.search');
 Route::post('books/search', 'BookController@search')->name('books.search');
 Route::get('books/externalSearch', 'BookController@externalSearch')->name('books.externalSearch');
@@ -64,5 +47,3 @@ Route::resource('books', 'BookController', ['except' => ['index', 'search', 'cre
 Route::resource('posts', 'PostController', ['except' => ['create', 'edit']]);
 Route::resource('users', 'UserController', ['except' => ['edit']]);
 Route::resource('comments', 'CommentController');
-
-
