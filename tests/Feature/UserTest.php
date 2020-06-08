@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
+use App\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
-use App\User;
+use Tests\TestCase;
 
 class UserTest extends TestCase
 {
@@ -21,19 +21,19 @@ class UserTest extends TestCase
      *
      * @return void
      */
-    public function testUsershow()
+    public function testUserShow()
     {
         $response = $this->get('/users/1');
         $response->assertStatus(200);
     }
 
-    public function testUseredit_noAuth()
+    public function testUserEdit_noAuth()
     {
         $response = $this->get('/posts/1/edit');
         $response->assertStatus(302);
     }
 
-    public function testUserupdate_Auth()
+    public function testUserUpdate_Auth()
     {
         $user = factory(User::class)->create();
         $user->user_description = Str::random(20);

@@ -24,15 +24,13 @@ class PostRequest extends FormRequest
     public function rules()
     {
         return [
-            // 'title' => 'required|max:255',
             'content' => 'required',
-            // 'user_id' => 'required|numeric',
-            // 'book_id' => 'required|numeric',
             'post_image' => 'file|image',
         ];
     }
 
-    public function messages() {
+    public function messages()
+    {
         return [
             'content.required' => '※入力してください',
             'content.file' => '※アップロードに失敗しました。別の画像で試してみてください',

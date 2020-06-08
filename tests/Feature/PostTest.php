@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
-use Illuminate\Support\Facades\Artisan;
-use App\User;
 use App\Post;
+use App\User;
+use Illuminate\Support\Facades\Artisan;
+use Tests\TestCase;
 
 class PostTest extends TestCase
 {
@@ -21,45 +21,45 @@ class PostTest extends TestCase
      *
      * @return void
      */
-    public function testPostindex()
+    public function testPostIndex()
     {
         $response = $this->get('/posts');
         $response->assertStatus(200);
     }
 
-    public function testPostshow()
+    public function testPostShow()
     {
         $response = $this->get('/posts/1');
         $response->assertStatus(200);
     }
 
-    public function testPostcreate_noAuth()
+    public function testPostCreate_noAuth()
     {
         $response = $this->get('/posts/create');
         $response->assertStatus(302);
     }
 
-    public function testPostedit_noAuth()
+    public function testPostEdit_noAuth()
     {
         $response = $this->get('/posts/1/edit');
         $response->assertStatus(302);
     }
 
-    public function testPostcreate_Auth()
+    public function testPostCreate_Auth()
     {
         $user = factory(User::class)->create();
         $response = $this->actingAs($user)->get('/posts/create');
         $response->assertStatus(200);
     }
 
-    public function testPostedit_Auth()
+    public function testPostEdit_Auth()
     {
         $user = factory(User::class)->create();
         $response = $this->actingAs($user)->get('/posts/1/edit');
         $response->assertStatus(200);
     }
 
-    public function testPoststore()
+    public function testPostStore()
     {
         $user = factory(User::class)->create();
         $response = $this->actingAs($user)->post('/posts', [
@@ -70,7 +70,7 @@ class PostTest extends TestCase
         $response->assertRedirect('/books/1');
     }
 
-    public function testPostupdate_sameid()
+    public function testPostUpdate_sameid()
     {
         $user = User::find(1);
         $post = Post::where('user_id', $user->id)->first();
@@ -81,7 +81,7 @@ class PostTest extends TestCase
         $response->assertRedirect('/posts/' . $user->id);
     }
 
-    public function testPostupdate_differentid()
+    public function testPostUpdate_differentid()
     {
         $user = factory(User::class)->create();
         $post = Post::orderBy('created_at', 'desc')->first();
