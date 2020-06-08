@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
 use Illuminate\Support\Facades\Artisan;
+use Tests\TestCase;
 
 class BookTest extends TestCase
 {
@@ -19,19 +19,19 @@ class BookTest extends TestCase
      *
      * @return void
      */
-    public function testBookindex()
+    public function testBookIndex()
     {
         $response = $this->get('/');
         $response->assertStatus(200);
     }
 
-    public function testBookshow()
+    public function testBookShow()
     {
         $response = $this->get('/books/1');
         $response->assertStatus(200);
     }
 
-    public function testBooksearch()
+    public function testBookSearch()
     {
         $response = $this->post('/books/search', [
             'search' => '雪国',
@@ -39,11 +39,11 @@ class BookTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function testBookexternalsearch()
+    public function testBookExternalsearch()
     {
         $response = $this->post('/books/externalSearch', [
             'search' => '雪国',
         ]);
-        $response->assertStatus(302);
+        $response->assertStatus(200);
     }
 }
