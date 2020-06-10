@@ -46,4 +46,3 @@ Route::get('posts/twitter/{post}', 'PostController@twitter')->name('posts.twitte
 Route::resource('books', 'BookController', ['except' => ['index', 'search', 'create']]);
 Route::resource('posts', 'PostController', ['except' => ['create', 'edit']]);
 Route::resource('users', 'UserController', ['except' => ['edit']]);
-Route::resource('comments', 'CommentController');
