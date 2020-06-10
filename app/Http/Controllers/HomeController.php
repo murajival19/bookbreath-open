@@ -25,4 +25,34 @@ class HomeController extends Controller
     {
         return view('home');
     }
+
+    /**
+     * termsを開きます。
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function terms()
+    {
+        return view('terms');
+    }
+
+    /**
+     * ポリシーを開きます。
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function policy()
+    {
+        return view('policy');
+    }
+
+    /**
+     * 使い方を開きます。
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function howToUse()
+    {
+        return view('howToUse');
+    }
 }
