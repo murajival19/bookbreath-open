@@ -3,27 +3,26 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Postlike;
+use App\Repository\PostLikeRepository;
 
 class PostlikeController extends Controller
 {
     public function like(Request $request)
     {
-        $postlike = new Postlike;
-        $postlike->user_id = $request->user_id;
-        $postlike->post_id = $request->post_id;
-        $postlike->save();
-
-        $likeCount = count(Postlike::where('post_id', $request->post_id)->get());
+        $postLikeRepository = new PostLikeRepository();
+        $postLikeRepository->savePostLike([
+            'user_id' => $request->user_id,
+            'post_id' => $request->post_id,
+        ]);
+        $likeCount = count($postLikeRepository->getPostLike($request->post_id)->get());
         return response()->json(['likeCount' => $likeCount]);
     }
 
-    public function unlike(Postlike $postlike, Request $request)
+    public function unlike(Request $request)
     {
-        $delete_postlike = $postlike->where('user_id', $request->user_id)->where('post_id', $request->post_id)->first();
-        $delete_postlike->delete();
-
-        $likeCount = count(Postlike::where('post_id', $request->post_id)->get());
+        $postLikeRepository = new PostLikeRepository();
+        $postLikeRepository->deletePostLike($request->user_id, $request->post_id);
+        $likeCount = count($postLikeRepository->getPostLike($request->post_id)->get());
         return response()->json(['likeCount' => $likeCount]);
     }
 }
