@@ -272,26 +272,6 @@ class BookController extends Controller
     }
 
     /**
-     * termsを開きます。
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function terms()
-    {
-        return view('books.terms');
-    }
-
-    /**
-     * ポリシーを開きます。
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function policy()
-    {
-        return view('books.policy');
-    }
-
-    /**
      * Amazonの購入ページを開きます。
      *
      * @param Request $request
@@ -313,15 +293,5 @@ class BookController extends Controller
     {
         $url = 'https://search.rakuten.co.jp/search/mall/' . $request->book_title;
         return redirect()->away($url);
-    }
-
-    /**
-     * 使い方を開きます。
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function howToUse()
-    {
-        return view('books.howToUse');
     }
 }

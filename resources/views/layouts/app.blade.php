@@ -51,7 +51,7 @@
                                 </li>
                             @endif
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('books.howToUse') }}">使い方</a>
+                                <a class="nav-link" href="{{ route('home.howToUse') }}">使い方</a>
                             </li>
                         @else
                             <li class="nav-item">
@@ -67,7 +67,7 @@
                                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
                                     <a href="{{ route('users.show', Auth::id()) }}" class="dropdown-item">プロフィール</a>
                                     <a href="{{ route('users.edit', Auth::id() ) }}" class="dropdown-item">登録情報変更</a>
-                                    <a href="{{ route('books.howToUse') }}" class="dropdown-item">使い方</a>
+                                    <a href="{{ route('home.howToUse') }}" class="dropdown-item">使い方</a>
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                         onclick="event.preventDefault();
                                         document.getElementById('logout-form').submit();">
