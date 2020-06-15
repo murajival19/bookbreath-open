@@ -32,12 +32,12 @@
                             @foreach ($books as $book)
                                 <div class="card mb-3 col-lg-3 col-md-4 col-6 border-0">
                                     <div>
-                                        <a href="{{ route('books.show', $book->id) }}">
+                                        <a href="{{ route('books.show', $book) }}">
                                             <img class="card-img-top" src="{{ $book->book_image_url }}">
                                         </a>
                                     </div>
                                     <div class="card-body pr-1 pl-1">
-                                        <a href="{{ route('books.show', $book->id) }}" style="text-decoration: none; color:#212529">
+                                        <a href="{{ route('books.show', $book) }}" style="text-decoration: none; color:#212529">
                                             <h5 class="card-title book-title">{{ $book->book_title }}</h5>
                                         </a>
                                         <booklike

@@ -56,7 +56,7 @@
                         <div class="card mb-3">
                             <div class="row no-gutters">
                                 <div class="col-md-4 my-auto">
-                                    <a href="{{ route('books.show', $book->id) }}">
+                                    <a href="{{ route('books.show', $book) }}">
                                         <img class="card-img" src="{{ $book->book_image_url }}">
                                     </a>
                                 </div>
@@ -64,7 +64,7 @@
                                     <div class="card-body">
                                         <div class="container">
                                             <div class="row justify-content-between">
-                                                <a href="{{ route('books.show', $book->id) }}" style="text-decoration: none; color:#212529">
+                                                <a href="{{ route('books.show', $book) }}" style="text-decoration: none; color:#212529">
                                                     <h5 class="card-title">{{ $book->book_title }}</h5>
                                                 </a>
                                                 <p>
