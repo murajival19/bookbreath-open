@@ -12,21 +12,22 @@ class PostRepository
     /**
      * 降順にすべての投稿を取得します。
      *
-     * @return \App\Book
+     * @return \App\Post
      */
     public function getPostsDesc()
     {
-        return Post::orderBy('created_at', 'desc')->with(
-            'user.thumbnail_image',
-            'image',
-            'book',
-            'post_parent.user',
-            'post_children',
-            'post_reference.user.thumbnail_image',
-            'post_reference.book',
-            'post_reference.post_parent.user',
-            'postlike',
-        );
+        return Post::orderBy('created_at', 'desc');
+    }
+
+    /**
+     * 降順に指定user_idの投稿を取得します。
+     *
+     * @param int $userId
+     * @return \App\Post
+     */
+    public function getPostsUserId(int $userId)
+    {
+        return Post::where('user_id', $userId)->orderBy('created_at', 'desc');
     }
 
     /**
@@ -51,16 +52,7 @@ class PostRepository
     {
         return Post::where('book_id', $bookId)
             ->where('reply_id', null)
-            ->orderBy('created_at', 'desc')
-            ->with(
-                'image',
-                'user.thumbnail_image',
-                'post_children',
-                'post_reference.user.thumbnail_image',
-                'post_reference.book',
-                'post_reference.post_parent.user',
-                'postlike',
-            );
+            ->orderBy('created_at', 'desc');
     }
 
     /**
@@ -96,37 +88,6 @@ class PostRepository
         $post = new Post();
         $post->fill($postData)->save();
         return $post;
-    }
-
-    /**
-     * Postモデルオブジェクトにリレーション追加します。
-     *
-     * @param \App\Post|Illuminate\Pagination\LengthAwarePaginator $post
-     * @return void
-     */
-    public function relationLoad($post)
-    {
-        $post->load(
-            'postlike',
-            'image',
-            'book',
-            'user.thumbnail_image',
-            'post_children.post_parent.user',
-            'post_children.post_children',
-            'post_children.user.thumbnail_image',
-            'post_children.image',
-            'post_children.book',
-            'post_children.postlike',
-            'post_parent.post_parent.user',
-            'post_parent.post_children',
-            'post_parent.user.thumbnail_image',
-            'post_parent.image',
-            'post_parent.postlike',
-            'post_parent.book',
-            'post_reference.user.thumbnail_image',
-            'post_reference.book',
-            'post_reference.post_parent.user',
-        );
     }
 
     /**

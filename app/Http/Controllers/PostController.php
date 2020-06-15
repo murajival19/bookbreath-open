@@ -116,7 +116,6 @@ class PostController extends Controller
     public function show(Post $post, Request $request)
     {
         $postRepository = new PostRepository();
-        $postRepository->relationLoad($post);
 
         // likeカウントとlikedの判定（post,単数）
         $likeService = new LikeService();
@@ -221,7 +220,6 @@ class PostController extends Controller
     {
         $postRepository = new PostRepository();
         $posts = $postRepository->getPostsSearchContent($request->search)->paginate(10);
-        $postRepository->relationLoad($posts);
 
         // likeカウントとlikedの判定（post,複数）
         $likeService = new LikeService();

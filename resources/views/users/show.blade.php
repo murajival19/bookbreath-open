@@ -29,7 +29,7 @@
                                         </p>
                                         @if (Auth::id() == $user->id)
                                             <div>
-                                                <a class="btn btn-success btn-sm" href="{{ route('users.edit', $user->id) }}">変更する</a>
+                                                <a class="btn btn-success btn-sm" href="{{ route('users.edit', $user) }}">変更する</a>
                                             </div>
                                         @endif
                                     </div>
