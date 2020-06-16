@@ -3,26 +3,39 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Repository\PostLikeRepository;
+use App\Service\PostLikeService;
 
+/**
+ * 投稿のいいねに関するコントローラクラス
+ */
 class PostlikeController extends Controller
 {
+    /**
+     * 投稿のいいねに関するサービスクラスのインスタンス
+     *
+     * @var \App\Service\PostLikeService
+     */
+    private $postLikeService;
+
+    /**
+     * コンストラクタ
+     *
+     * @param PostLikeService $postLikeService
+     */
+    public function __construct(PostLikeService $postLikeService)
+    {
+        $this->postLikeService = $postLikeService;
+    }
+
     public function like(Request $request)
     {
-        $postLikeRepository = new PostLikeRepository();
-        $postLikeRepository->savePostLike([
-            'user_id' => $request->user_id,
-            'post_id' => $request->post_id,
-        ]);
-        $likeCount = count($postLikeRepository->getPostLike($request->post_id)->get());
+        $likeCount = $this->postLikeService->setLike($request);
         return response()->json(['likeCount' => $likeCount]);
     }
 
     public function unlike(Request $request)
     {
-        $postLikeRepository = new PostLikeRepository();
-        $postLikeRepository->deletePostLike($request->user_id, $request->post_id);
-        $likeCount = count($postLikeRepository->getPostLike($request->post_id)->get());
+        $likeCount = $this->postLikeService->setUnlike($request);
         return response()->json(['likeCount' => $likeCount]);
     }
 }
