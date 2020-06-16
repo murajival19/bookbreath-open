@@ -19,6 +19,9 @@
                                 </div>
                                 <div class="col-md-10">
                                     <div class="card-body">
+                                        @if (isset($errors))
+                                            <p style="color:tomato">{{ $errors->first() }}</p>
+                                        @endif
                                         <h5 class="card-title">{{ $user->name }}</h5>
                                         <p>bookbreath ID : {{ $user->name_id }}</p>
                                         <p>{{ $user->user_description }}</p>

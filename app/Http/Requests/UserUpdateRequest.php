@@ -4,9 +4,8 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
-use App\User;
 
-class UserRequest extends FormRequest
+class UserUpdateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -26,13 +25,13 @@ class UserRequest extends FormRequest
     public function rules()
     {
         if (Auth::id()) {
-            $unique_email = '|unique:users,email,'.Auth::id().',id';
+            $unique_email = '|unique:users,email,' . Auth::id() . ',id';
         } else {
             $unique_email = '|unique:users,email';
         }
 
         if (Auth::id()) {
-            $unique_name_id = '|unique:users,name_id,'.Auth::id().',id';
+            $unique_name_id = '|unique:users,name_id,' . Auth::id() . ',id';
         } else {
             $unique_name_id = '|unique:users,name_id';
         }
