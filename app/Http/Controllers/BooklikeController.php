@@ -3,13 +3,30 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Repository\BookLikeRepository;
+use App\Service\BookLikeService;
 
 /**
  * 本のいいねに関するコントローラクラス
  */
 class BooklikeController extends Controller
 {
+    /**
+     * 本のいいねに関するサービスクラスのインスタンス
+     *
+     * @var \App\Service\BookLikeService
+     */
+    private $bookLikeService;
+
+    /**
+     * コンストラクタ
+     *
+     * @param BookLikeService $bookLikeService
+     */
+    public function __construct(BookLikeService $bookLikeService)
+    {
+        $this->bookLikeService = $bookLikeService;
+    }
+
     /**
      * 指定した本にいいねをします。
      *
@@ -18,12 +35,7 @@ class BooklikeController extends Controller
      */
     public function like(Request $request)
     {
-        $bookLikeRepository = new BookLikeRepository();
-        $bookLikeRepository->saveBookLike([
-            'user_id' => $request->user_id,
-            'book_id' => $request->book_id,
-        ]);
-        $likeCount = count($bookLikeRepository->getBookLike($request->book_id)->get());
+        $likeCount = $this->bookLikeService->setLike($request);
         return response()->json(['likeCount' => $likeCount]);
     }
 
@@ -35,9 +47,7 @@ class BooklikeController extends Controller
      */
     public function unlike(Request $request)
     {
-        $bookLikeRepository = new BookLikeRepository();
-        $bookLikeRepository->deleteBookLike($request->user_id, $request->book_id);
-        $likeCount = count($bookLikeRepository->getBookLike($request->book_id)->get());
+        $likeCount = $this->bookLikeService->setUnlike($request);
         return response()->json(['likeCount' => $likeCount]);
     }
 }

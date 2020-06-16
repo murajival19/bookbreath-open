@@ -6,6 +6,9 @@ use App\Repository\PostRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * ユーザーに関するサービスクラス
+ */
 class UserService
 {
     /**

@@ -7,6 +7,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * 投稿に関するサービスクラス
+ */
 class PostService
 {
     /**

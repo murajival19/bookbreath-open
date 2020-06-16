@@ -28,7 +28,7 @@ class BookService
     private $postRepository;
 
     /**
-     * 本のいいねにかんするリポジトリクラスのインスタンス
+     * 本のいいねに関するリポジトリクラスのインスタンス
      *
      * @var \App\Repository\BookLikeRepository
      */
