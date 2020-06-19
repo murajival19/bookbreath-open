@@ -3,18 +3,33 @@
 namespace App\Http\Controllers;
 
 use App\Post;
-use App\Image;
 use App\Http\Requests\PostRequest;
+use App\Service\PostService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image as ImageOperetor;
 
+/**
+ * 投稿に関するコントローラクラス
+ */
 class PostController extends Controller
 {
+    /**
+     * 投稿に関するサービスクラスのインスタンス
+     *
+     * @var \App\Service\PostService
+     */
+    private $postService;
+
+    /**
+     * コンストラクタ
+     *
+     * @param PostService $postService
+     */
+    public function __construct(PostService $postService)
+    {
+        $this->postService = $postService;
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -22,31 +37,7 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::orderBy('created_at', 'desc')->paginate(10);
-        $posts->load(
-            'user.thumbnail_image',
-            'image',
-            'book',
-            'post_parent.user',
-            'post_children',
-            'post_reference.user.thumbnail_image',
-            'post_reference.book',
-            'post_reference.post_parent.user'
-        );
-
-        // likeカウントとlikedの判定（post,複数）
-        $posts->load('postlike');
-        foreach ($posts as $post) {
-            $post->defaultCount = count($post->postlike);
-
-            $likedjudge = $post->postlike->where('user_id', Auth::id())->first();
-            if (!isset($likedjudge)) {
-                $post->defaultLiked = false;
-            } else {
-                $post->defaultLiked = true;
-            }
-        }
-
+        $posts = $this->postService->getPosts();
         return view('posts.index', [
             'posts' => $posts,
         ]);
@@ -59,26 +50,8 @@ class PostController extends Controller
      */
     public function create(Request $request)
     {
-        $user = Auth::user()->load('thumbnail_image');
-        $temp = ['user' => $user];
-
-        // replyコメントがある時
-        if (isset($request->reply_id)) {
-            $book_id = Post::find($request->reply_id)->book_id;
-            $temp += ['reply_id' => $request->reply_id];
-            $temp += ['book_id' => $book_id];
-            // referrenceコメントがある時
-        } elseif (isset($request->reference_id)) {
-            $book_id = Post::find($request->reference_id)->book_id;
-            $temp += ['reference_id' => $request->reference_id];
-            $temp += ['book_id' => $book_id];
-            // book_idのみの時
-        } elseif (isset($request->book_id)) {
-            $temp += ['book_id' => $request->book_id];
-        } else {
-            // 何もない時
-        }
-        return view('posts.create', $temp);
+        $param = $this->postService->setCreatePostParam($request);
+        return view('posts.create', $param);
     }
 
     /**
@@ -89,33 +62,7 @@ class PostController extends Controller
      */
     public function store(PostRequest $request)
     {
-        $post = new Post;
-        DB::transaction(function () use ($post, $request) {
-
-            $post = $post->fill($request->all());
-            $post->save();
-
-            if (isset($request->post_image)) :
-                // 画像をストレージに保存
-                $image = new Image();
-                $img = ImageOperetor::make($request->file('post_image'));
-
-                // ここで編集
-                $img->resize(500, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                });
-
-                $save_path = storage_path('app/public/image/');
-                $filename = uniqid("post_image_") . '.' . $request->file('post_image')->guessExtension();
-                $img->save($save_path . $filename);
-
-                // 画像パスをDBに保存
-                $image->user_id = $request->user_id;
-                $image->post_id = $post->id;
-                $image->image_name = $filename;
-                $image->save();
-            endif;
-        });
+        $this->postService->createPost($request);
 
         // replyコメントがある時
         if (isset($request->reply_id)) {
@@ -137,80 +84,15 @@ class PostController extends Controller
      */
     public function show(Post $post, Request $request)
     {
-        $post->load([
-            'image',
-            'book',
-            'user.thumbnail_image',
-            'post_children.post_parent.user',
-            'post_children.post_children',
-            'post_children.user.thumbnail_image',
-            'post_children.image',
-            'post_children.book',
-            'post_parent.post_parent.user',
-            'post_parent.post_children',
-            'post_parent.user.thumbnail_image',
-            'post_parent.image',
-            'post_parent.book',
-            'post_reference.user.thumbnail_image',
-            'post_reference.book',
-            'post_reference.post_parent.user',
-        ]);
+        $this->postService->setPostLiked($post);
+        // 返信投稿のページネーションの設定
+        $postChildrenPaginate = $this->postService->setPostChildrenPaginate($post->post_children, $request, 5);
 
-        // likeカウントとlikedの判定（post,単数）
-        $post->load('postlike');
-        $post->defaultCount = count($post->postlike);
-
-        $likedjudge = $post->postlike->where('user_id', Auth::id())->first();
-        if (!isset($likedjudge)) {
-            $post->defaultLiked = false;
-        } else {
-            $post->defaultLiked = true;
-        }
-
-        // likeカウントとlikedの判定（post_parent,単数）
-        if (isset($post->post_parent)) {
-            $post->load('post_parent.postlike');
-            $post->post_parent->defaultCount = count($post->post_parent->postlike);
-
-            $likedjudge = $post->post_parent->postlike->where('user_id', Auth::id())->first();
-            if (!isset($likedjudge)) {
-                $post->post_parent->defaultLiked = false;
-            } else {
-                $post->post_parent->defaultLiked = true;
-            }
-        }
-
-        // likeカウントとlikedの判定（post_children,複数）
-        if (isset($post->post_children)) {
-            $post->load('post_children.postlike');
-            foreach ($post->post_children as $post_child) {
-                $post_child->defaultCount = count($post_child->postlike);
-
-                $likedjudge = $post_child->postlike->where('user_id', Auth::id())->first();
-                if (!isset($likedjudge)) {
-                    $post_child->defaultLiked = false;
-                } else {
-                    $post_child->defaultLiked = true;
-                }
-            }
-        }
-
-        // ページネーションの設定
-        $dp = 5; // 表示ページ数
-        $post->post_children = new LengthAwarePaginator(
-            $post->post_children->forPage($request->page, $dp),
-            count($post->post_children),
-            $dp,
-            $request->page,
-            array('path' => $request->url())
-        );
-
-        $temp = [
+        $response = [
             'post' => $post,
-            'post_children' => $post->post_children, // ページネーション用
+            'post_children' => $postChildrenPaginate,
         ];
-
-        return view('posts.show', $temp);
+        return view('posts.show', $response);
     }
 
 
@@ -222,11 +104,9 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        $post->load('image');
-        $user = Auth::user()->load('thumbnail_image');
         return view('posts.edit', [
             'post' => $post,
-            'user' => $user,
+            'user' => Auth::user(),
         ]);
     }
 
@@ -239,147 +119,50 @@ class PostController extends Controller
      */
     public function update(PostRequest $request, Post $post)
     {
-        if ($request->user_id != $post->user->id) {
+        if (intval($request->user_id) !== $post->user->id) {
             return redirect('posts');
-        } else {
-            DB::transaction(function () use ($request, $post) {
-                $post->fill($request->all())->save();
-                if (isset($request->image_delete)) :
-                    $image_array = Image::whereIn('id', $request->image_delete)->get();
-                    // ストレージの画像を削除
-                    foreach ($image_array as $image) {
-                        $filePath = storage_path('app/public/image/') . $image->image_name;
-                        if (File::exists($filePath)) {
-                            unlink($filePath);
-                            Storage::delete($image);
-                        }
-                    }
-                    // DBの画像パスを削除
-                    Image::whereIn('id', $request->image_delete)->delete();
-                endif;
-
-                if (isset($request->post_image)) :
-                    // 画像をストレージに保存
-                    $image = new Image();
-                    $img = ImageOperetor::make($request->file('post_image'));
-
-                    // ここで編集
-                    $img->resize(500, null, function ($constraint) {
-                        $constraint->aspectRatio();
-                    });
-
-                    $save_path = storage_path('app/public/image/');
-                    $filename = uniqid("post_image_") . '.' . $request->file('post_image')->guessExtension();
-                    $img->save($save_path . $filename);
-
-                    // 画像パスをDBに保存
-                    $image->user_id = $request->user_id;
-                    $image->post_id = $post->id;
-                    $image->image_name = $filename;
-                    $image->save();
-                endif;
-            });
-
-            return redirect()->route('posts.show', $post->id);
         }
+        $this->postService->updatePost($request, $post);
+        return redirect()->route('posts.show', $post->id);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * 投稿を削除します。
      *
-     * @param  \App\Post  $post
+     * @param Post $post
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Post $post)
-    {
-        $image_array = Image::where('post_id', $post->id)->get();
-        if (isset($image_array)) {
-            foreach ($image_array as $image) {
-                // ストレージの画像を削除（DBは連動して自動で削除→マイグレーション時に設定）
-                $filePath = storage_path('app/public/image/') . $image->image_name;
-                if (File::exists($filePath)) {
-                    unlink($filePath);
-                    Storage::delete($image);
-                }
-            }
-        }
-        // ポストを削除
-        Post::find($post->id)->delete();
-
-        return redirect('/posts');
-    }
-
     public function delete(Post $post)
     {
-        $image_array = Image::where('post_id', $post->id)->get();
-        if (isset($image_array)) {
-            foreach ($image_array as $image) {
-                // ストレージの画像を削除（DBは連動して自動で削除→マイグレーション時に設定）
-                $filePath = storage_path('app/public/image/') . $image->image_name;
-                if (File::exists($filePath)) {
-                    unlink($filePath);
-                    Storage::delete($image);
-                }
-            }
-        }
-        // ポストを削除
-        Post::find($post->id)->delete();
-
+        $this->postService->deletePost($post->id);
         return redirect('/posts');
     }
 
+    /**
+     * 投稿を検索します。
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
     public function search(Request $request)
     {
-        $posts = Post::where('content', 'like', "%{$request->search}%")
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-        $posts->load(
-            'user.thumbnail_image',
-            'book',
-            'user',
-            'image',
-            'post_parent.user',
-            'post_children',
-            'post_reference.user.thumbnail_image',
-            'post_reference.book',
-            'post_reference.post_parent.user'
-        );
-
-        $search_count = $posts->count();
-
-        // likeカウントとlikedの判定（post,複数）
-        $posts->load('postlike');
-        foreach ($posts as $post) {
-            $post->defaultCount = count($post->postlike);
-
-            $likedjudge = $post->postlike->where('user_id', Auth::id())->first();
-            if (!isset($likedjudge)) {
-                $post->defaultLiked = false;
-            } else {
-                $post->defaultLiked = true;
-            }
-        }
-
+        $posts = $this->postService->searchPosts($request->search, 10);
         return view('posts.search', [
             'posts' => $posts,
             'search_query' => $request->search,
-            'search_count' => $search_count,
+            'search_count' => $posts->count(),
         ]);
     }
 
+    /**
+     * 投稿をtwitterにシェアします。
+     *
+     * @param Post $post
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
     public function twitter(Post $post, Request $request)
     {
-        $url = 'url=' . $request->url . '/posts/' . $post->id;
-        $text = '&text=' . $post->content . ' by ' . $request->user_name;
-        $text = preg_replace('/(?:\n|\r|\r\n)/', '', $text);
-
-        if (isset($request->book_title)) {
-            $hashtags = '&hashtags=' . $request->book_title;
-            $tweetShere = 'https://twitter.com/intent/tweet?' . $url . $text . $hashtags;
-        } else {
-            $tweetShere = 'https://twitter.com/intent/tweet?' . $url . $text;
-        }
-
-        return redirect()->away($tweetShere);
+        return redirect()->away($this->postService->sendTwitter($post, $request));
     }
 }

@@ -23,12 +23,12 @@ Route::get('books/externalSearch', 'BookController@externalSearch')->name('books
 Route::post('books/externalSearch', 'BookController@externalSearch')->name('books.externalSearch');
 Route::get('books/librarySearch', 'BookController@librarySearch')->name('books.librarySearch');
 Route::post('books/librarySearch', 'BookController@librarySearch')->name('books.librarySearch');
-Route::get('/terms', 'BookController@terms')->name('books.terms');
-Route::get('/policy', 'BookController@policy')->name('books.policy');
+Route::get('/terms', 'HomeController@terms')->name('home.terms');
+Route::get('/policy', 'HomeController@policy')->name('home.policy');
 Route::get('books/buyAmazon', 'BookController@buyAmazon')->name('books.buyAmazon');
 Route::get('books/buyRakuten', 'BookController@buyRakuten')->name('books.buyRakuten');
 Route::get('books/buyYahoo', 'BookController@buyYahoo')->name('books.buyYahoo');
-Route::get('books/howToUse', 'BookController@howToUse')->name('books.howToUse');
+Route::get('books/howToUse', 'HomeController@howToUse')->name('home.howToUse');
 
 // 新規投稿、編集はログイン必須
 Route::get('posts/create', 'PostController@create')->name('posts.create')->middleware('auth');
@@ -46,4 +46,3 @@ Route::get('posts/twitter/{post}', 'PostController@twitter')->name('posts.twitte
 Route::resource('books', 'BookController', ['except' => ['index', 'search', 'create']]);
 Route::resource('posts', 'PostController', ['except' => ['create', 'edit']]);
 Route::resource('users', 'UserController', ['except' => ['edit']]);
-Route::resource('comments', 'CommentController');

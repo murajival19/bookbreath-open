@@ -4,14 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Book;
 use App\Http\Requests\BookRequest;
-use App\Repository\BookLikeRepository;
-use App\Repository\BookRepository;
-use App\Repository\PostRepository;
-use App\Service\GoogleBooksRequestService;
-use App\Service\LikeService;
-use App\Service\SearchService;
+use App\Service\BookService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 /**
  * 本に関するコントローラクラス
@@ -19,21 +13,30 @@ use Illuminate\Support\Facades\Auth;
 class BookController extends Controller
 {
     /**
+     * 本に関するサービスクラスのインスタンス
+     *
+     * @var \App\Service\BookService
+     */
+    private $bookService;
+
+    /**
+     * コンストラクタ
+     *
+     * @param BookService $bookService
+     */
+    public function __construct(BookService $bookService)
+    {
+        $this->bookService = $bookService;
+    }
+
+    /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
     public function index()
     {
-        // すべての本を取得
-        $bookRepository = new BookRepository();
-        $books = $bookRepository->getBooksDesc()->paginate(20);
-
-        // likeカウントとlikedの判定（book,複数）
-        $likeService = new LikeService();
-        foreach ($books as $book) {
-            $likeService->BookLikedJudge($book);
-        }
+        $books = $this->bookService->getBooks();
 
         return view('books.index', [
             'books' => $books,
@@ -51,35 +54,11 @@ class BookController extends Controller
         $requestData = $request->all();
         $requestData['book_image_url'] = str_replace('http://', 'https://', $request->book_image_url);
 
-        // 本情報を保存
-        $bookRepository = new BookRepository();
-        $book = $bookRepository->saveBook($requestData);
-
-        // likeの登録
-        $bookLikeRepository = new BookLikeRepository();
-        $bookLikeRepository->saveBookLike([
-            'user_id' => Auth::id(),
-            'book_id' => $book->id,
-        ]);
-
-        // likeカウントとlikedの判定（book,単独）
-        $book->load('booklike');
-        $likeService = new LikeService();
-        $likeService->bookLikedJudge($book);
+        $book = $this->bookService->createBook($requestData);
 
         return view('books.create', [
             'book' => $book,
         ]);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
     }
 
     /**
@@ -90,55 +69,8 @@ class BookController extends Controller
      */
     public function show(Book $book)
     {
-        // 返信ではない投稿を取得
-        $postRepository = new PostRepository();
-        $posts = $postRepository->getPostsNotReply($book->id)->paginate(5);
-
-        // likeカウントとlikedの判定（book,単独）
-        $likeService = new LikeService();
-        $likeService->bookLikedJudge($book);
-
-        // likeカウントとlikedの判定（post,複数）
-        foreach ($posts as $post) {
-            $likeService->postLikedJudge($post);
-        }
-
-        return view('books.show', [
-            'book' => $book,
-            'posts' => $posts,
-        ]);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Book  $book
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Book $book)
-    {
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Book  $book
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Book $book)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Book  $book
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Book $book)
-    {
+        $param = $this->bookService->getBookWithPosts($book);
+        return view('books.show', $param);
     }
 
     /**
@@ -153,22 +85,8 @@ class BookController extends Controller
             return redirect('/');
         }
 
-        // 指定キーワードに該当する本を取得
-        $searchWords = SearchService::searchWordsOrganizer($request->search);
-        $bookRepository = new BookRepository();
-        $books = $bookRepository->searchWords($searchWords)->paginate(5);
-
-        // likeカウントとlikedの判定（book,複数）
-        $likeService = new LikeService();
-        foreach ($books as $book) {
-            $likeService->bookLikedJudge($book);
-        }
-
-        return view('books.search', [
-            'books' => $books,
-            'search_query' => $request->search,
-            'search_count' => $books->total(),
-        ]);
+        $param = $this->bookService->getBooksSearch($request->search);
+        return view('books.search', $param);
     }
 
     /**
@@ -179,7 +97,7 @@ class BookController extends Controller
      */
     public function externalSearch(Request $request)
     {
-        $returnArray = [
+        $searchParam = [
             'search_title' => $request->title,
             'search_author' => $request->author,
             'search_isbn' => $request->isbn,
@@ -188,34 +106,18 @@ class BookController extends Controller
         ];
 
         if (empty($request->title) && empty($request->author) && empty($request->isbn) && empty($request->all)) {
-            return view('books.externalSearch', $returnArray);
+            return view('books.externalSearch', $searchParam);
         }
 
-        $googleBooksRequestService = new GoogleBooksRequestService();
-        // クエリのセット
-        if (!empty($request->all)) {
-            $googleBooksRequestService->setAll($request->all);
-        }
-        if (!empty($request->title)) {
-            $googleBooksRequestService->setTitle($request->title);
-        }
-        if (!empty($request->author)) {
-            $googleBooksRequestService->setAuthor($request->author);
-        }
-        if (!empty($request->isbn)) {
-            $googleBooksRequestService->setIsbn($request->isbn);
-        }
-
-        // GoogleBooksへリクエスト
-        $response = $googleBooksRequestService->fetchGoogleBooks();
+        $response = $this->bookService->getBooksExternalSearch($searchParam);
 
         if ($response == []) {
-            return redirect()->route('books.externalSearch', $returnArray)->withErrors('本情報の取得に失敗しました')->withInput();
+            return redirect()->route('books.externalSearch', $searchParam)->withErrors('本情報の取得に失敗しました')->withInput();
         } elseif ($response->totalItems == 0) {
-            return view('books.externalSearch', $returnArray);
+            return view('books.externalSearch', $searchParam);
         } else {
             $books = $response->items;
-            return view('books.externalSearch', array_merge($returnArray, [
+            return view('books.externalSearch', array_merge($searchParam, [
                 'books' => $books,
                 'search_count' => $response->totalItems,
             ]));
@@ -229,16 +131,8 @@ class BookController extends Controller
      */
     public function library()
     {
-        // 自分がいいねした本を取得
-        $bookRepository = new BookRepository();
-        $books = $bookRepository->getBooksLiked()->paginate(20);
-
-        // likeカウントとlikedの判定（book,複数）
-        $likeService = new LikeService();
-        foreach ($books as $book) {
-            $likeService->bookLikedJudge($book);
-        }
-        return view('books.library', ['books' => $books]);
+        $param = $this->bookService->getBooksWithLiked();
+        return view('books.library', $param);
     }
 
     /**
@@ -252,43 +146,8 @@ class BookController extends Controller
         if (empty($request->search)) {
             return redirect('/books/library');
         }
-
-        // 指定キーワードに該当する本を取得
-        $searchWords = SearchService::searchWordsOrganizer($request->search);
-        $bookRepository = new BookRepository();
-        $books = $bookRepository->searchWordsWithLiked($searchWords)->paginate(5);
-
-        // likeカウントとlikedの判定（book,複数）
-        $likeService = new LikeService();
-        foreach ($books as $book) {
-            $likeService->bookLikedJudge($book);
-        }
-
-        return view('books.library', [
-            'books' => $books,
-            'search_query' => $request->search,
-            'search_count' => $books->total(),
-        ]);
-    }
-
-    /**
-     * termsを開きます。
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function terms()
-    {
-        return view('books.terms');
-    }
-
-    /**
-     * ポリシーを開きます。
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function policy()
-    {
-        return view('books.policy');
+        $param = $this->bookService->getBooksSearch($request->search);
+        return view('books.library', $param);
     }
 
     /**
@@ -313,15 +172,5 @@ class BookController extends Controller
     {
         $url = 'https://search.rakuten.co.jp/search/mall/' . $request->book_title;
         return redirect()->away($url);
-    }
-
-    /**
-     * 使い方を開きます。
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function howToUse()
-    {
-        return view('books.howToUse');
     }
 }

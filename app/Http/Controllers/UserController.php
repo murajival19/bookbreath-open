@@ -3,49 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\User;
-use App\Image;
-use App\Post;
+use App\Http\Requests\UserUpdateRequest;
+use App\Service\UserService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
-use App\Http\Requests\UserRequest;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image as ImageOperetor;
 
+/**
+ * ユーザーに関する処理を行うコントローラクラス
+ */
 class UserController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * ユーザーに関するサービスクラスのインスタンス
      *
-     * @return \Illuminate\Http\Response
+     * @var \App\Service\UserService
      */
-    public function index(Request $request)
-    {
-
-        //
-    }
+    private $userService;
 
     /**
-     * Show the form for creating a new resource.
+     * コンストラクタ
      *
-     * @return \Illuminate\Http\Response
+     * @param UserService $userService
      */
-    public function create()
+    public function __construct(UserService $userService)
     {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
+        $this->userService = $userService;
     }
 
     /**
@@ -56,31 +37,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        $user->load('thumbnail_image');
-        $posts = Post::where('user_id', $user->id)->orderBy('created_at', 'desc')->paginate(10);
-        $posts->load(
-            'book',
-            'image',
-            'post_parent.user',
-            'post_children',
-            'user.thumbnail_image',
-            'post_reference.user.thumbnail_image',
-            'post_reference.book',
-            'post_reference.post_parent.user'
-        );
-
-        // likeカウントとlikedの判定（post,複数）
-        $posts->load('postlike');
-        foreach ($posts as $post) {
-            $post->defaultCount = count($post->postlike);
-
-            $likedjudge = $post->postlike->where('user_id', Auth::id())->first();
-            if (!isset($likedjudge)) {
-                $post->defaultLiked = false;
-            } else {
-                $post->defaultLiked = true;
-            }
-        }
+        $posts = $this->userService->getPosts($user->id);
 
         return view('users.show', [
             'user' => $user,
@@ -96,18 +53,12 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        $user = User::find(Auth::id());
-        $user->load('post.book');
-        $param = $user->getFillable();
-
-        // nullを""に変換
-        foreach ($param as $item) {
-            if (!isset($user[$item])) {
-                $user[$item] = '';
-            }
+        // ユーザー確認
+        if ($user->id !== Auth::id()) {
+            return redirect()->route('users.show', Auth::user())->withErrors('適切なユーザーでログインしてください')->withInput();
         }
-        $user->password = '';
 
+        $this->userService->setUserForEdit($user);
         return view('users.edit', ['user' => $user]);
     }
 
@@ -118,67 +69,9 @@ class UserController extends Controller
      * @param  \App\User  $user
      * @return \Illuminate\Http\Response
      */
-    public function update(UserRequest $request, User $user)
+    public function update(UserUpdateRequest $request, User $user)
     {
-        DB::transaction(function () use ($request, $user) {
-            $param = $user->getFillable();
-            $password = $user->password;
-            $thumbnail_id = $user->thumbnail_id;
-
-            foreach ($param as $item) {
-                if ($user[$item] != $request[$item]) {
-                    $user[$item] = $request[$item];
-                }
-            }
-            // パスワードの更新
-            if (!empty($request->password)) {
-                $user->password = Hash::make($request->password);
-            } else {
-                $user->password = $password;
-            }
-            // サムネイル画像の更新
-            if (isset($request->user_image)) {
-                // すでにサムネイル画像があるなら
-                if (!empty($thumbnail_id)) {
-
-                    // 今のサムネイル画像がnoimage以外なら
-                    if ($user->thumbnail_id != 1) {
-                        $image = Image::find($thumbnail_id);
-
-                        // ストレージの画像を削除
-                        $filePath = storage_path('app/public/image/') . $image->image_name;
-                        if (File::exists($filePath)) {
-                            unlink($filePath);
-                            Storage::delete($image);
-                        }
-
-                        // DBの画像パスを削除
-                        $image->delete();
-                    }
-                }
-
-                $img = ImageOperetor::make($request->file('user_image'));
-
-                // ここで編集
-                $img->resize(200, 200);
-
-                $save_path = storage_path('app/public/image/');
-                $filename = uniqid("user_image_") . '.' . $request->file('user_image')->guessExtension();
-                $img->save($save_path . $filename);
-
-                $image = new Image();
-                $image->image_name = $filename;
-                $image->user_id = $user->id;
-                $image->save();
-
-                $user->thumbnail_id = $image->id;
-            } else {
-                $user->thumbnail_id = $thumbnail_id;
-            }
-
-            $user->save();
-        });
-
+        $this->userService->updateUser($request, $user);
         return redirect('/users/' . $user->id);
     }
 
@@ -190,6 +83,5 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        //
     }
 }
