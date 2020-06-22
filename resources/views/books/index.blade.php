@@ -67,7 +67,7 @@
             <a class="col-12" href="{{ route('home.policy') }}"><p style="color:#212529">プライバシーポリシー</p></a>
         </div>
         <div class="row footer-row-bottom justify-content-center text-center">
-            <p>© 2019 bookbreath.net. All rights reserved. Made by Jun Kawamura</p>
+            <p>© {{ \Carbon\Carbon::now()->format("Y") }} bookbreath.info. All rights reserved. Made by Jun Kawamura</p>
         </div>
     </div>
 </footer>
