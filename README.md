@@ -1,14 +1,12 @@
 # bookbreath
-## PHP/Laravelで開発した、書籍のストックとシェアに特化したSNSです。
+## PHP/Laravelで開発した、書籍のストックとシェアに特化したSNSです
 
-公開中サービス：https://bookbreath.info/
+公開中サービス：https://bookbreath.net/
 
-使い方：https://bookbreath.info/books/howToUse
+使い方：https://bookbreath.net/books/howToUse
 
 ### ■開発、実装環境
 
-- CentOS Linux 8.2
-- Apache 2.4.37
 - php 7.3.9
 - MariaDB 10.3.17
 - Laravel Framework 7.9.2
