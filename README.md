@@ -7,9 +7,9 @@
 
 ### ■開発、実装環境
 
-- php 7.3.9
+- PHP 7.3.9
 - MariaDB 10.3.17
-- Laravel Framework 7.9.2
+- Laravel 7.9.2
 - Vue.js v2.6
 - Git 2.18.4
 
